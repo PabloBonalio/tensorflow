@@ -101,7 +101,7 @@ absl::StatusOr<bool> DuplicateConstantExpressionPerUser(
           << op->ToString() << " Instruction to clone: " << i->ToString();
       new_operand_vector.push_back(it->second);
     }
-    HloInstruction* cloned_instr = computation->AddInstruction(
+    HloInstruction* cloned_instr = to_clone->AddInstruction(
         i->CloneWithNewOperands(i->shape(), new_operand_vector));
     cloned_instructions_map[i] = cloned_instr;
     if (i == to_clone) {

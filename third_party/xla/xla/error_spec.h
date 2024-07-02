@@ -47,6 +47,30 @@ struct ErrorSpec {
   // (We could have a symmetric more_infs_ok flag if necessary; right now it
   // appears not to be.)
   bool fewer_infs_ok = false;
+
+  // Type of low precision floating point to use for error bound calculations.
+  // We can't infer the type from the result because the result FP8 could have
+  // been used for intermediate calculations.
+  enum class LowPrecisionFPType {
+    kUnused,
+    kFP8E4M3FN,
+    kFP8E5M2,
+  };
+
+  struct LowPrecisionFPErrorSpec {
+    LowPrecisionFPType type = LowPrecisionFPType::kUnused;
+    // Allowable distance in number of representable floats between two FP8
+    // values if the type is FP8 and the value is outside the error bound. +/-0
+    // are considered equivalent.
+    int within_n_f8_values = -1;
+  };
+
+  // If the computation uses low precision floating point (e.g. FP8), this field
+  // specifies the error bounds to be used. This allows us to have a per element
+  // error bound measured in ulps vs relying on the default relative/absolute
+  // error bounds. We need this for FP8 since it's very sparse and we'd like to
+  // avoid unnecessarily large error bounds.
+  LowPrecisionFPErrorSpec low_precision_fp_error_spec;
 };
 
 }  // namespace xla

@@ -1,5 +1,9 @@
 load("//tensorflow:tensorflow.default.bzl", "get_compatible_with_portable")
-load("//tensorflow/compiler/mlir/lite:build_def.bzl", "tflite_copts")
+load("//tensorflow/compiler/mlir/lite:build_def.bzl", "tflite_cc_library_with_c_headers_test", "tflite_copts")
+load(
+    "//tensorflow/compiler/mlir/lite/core/c:special_rules.bzl",
+    "c_api_visibility_allowlist",
+)
 
 package(
     # copybara:uncomment default_applicable_licenses = ["//tensorflow:license"],
@@ -10,15 +14,21 @@ package(
 )
 
 # LINT.IfChange(common)
-cc_library(
+tflite_cc_library_with_c_headers_test(
     name = "common",
     srcs = [],
-    hdrs = ["builtin_op_data.h"],
+    hdrs = [
+        "builtin_op_data.h",
+        "common.h",
+    ],
     compatible_with = get_compatible_with_portable(),
     copts = tflite_copts(),
     visibility = [
         "//tensorflow/compiler/mlir/lite:__subpackages__",
         "//tensorflow/compiler/mlir/quantization/tensorflow/utils:__pkg__",
+    ],
+    deps = [
+        ":c_api_types",
     ],
     alwayslink = 1,  # Why?? TODO(b/161243354): eliminate this.
 )
@@ -37,3 +47,15 @@ alias(
     ],
 )
 # LINT.ThenChange(//tensorflow/lite/core/c:private_common)
+
+# LINT.IfChange(c_api_types)
+tflite_cc_library_with_c_headers_test(
+    name = "c_api_types",
+    hdrs = ["c_api_types.h"],
+    compatible_with = get_compatible_with_portable(),
+    copts = tflite_copts(),
+    visibility = [
+        "//tensorflow/compiler/mlir/lite:__subpackages__",
+    ] + c_api_visibility_allowlist(),
+)
+# LINT.ThenChange(//tensorflow/lite/core/c:c_api_types)

@@ -911,8 +911,8 @@ cc_library(
     deps = [
         ":tensorflow_lite",
         ":tensorflow_lite_passes_inc_gen",
+        "//tensorflow/compiler/mlir/lite/kernels/internal/utils:sparsity_format_converter",
         "//tensorflow/compiler/mlir/quantization/common/quantization_lib:quantization_config",
-        "//tensorflow/lite/kernels/internal/utils:sparsity_format_converter",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
         "@eigen_archive//:eigen3",
@@ -1364,7 +1364,6 @@ cc_library(
         "//tensorflow/compiler/mlir/lite/stablehlo:tfl_legalize_hlo",  # buildcleaner: keep
         "//tensorflow/compiler/mlir/lite/stablehlo:transforms",
         "//tensorflow/compiler/mlir/lite/stablehlo:uniform_quantized_stablehlo_to_tfl_pass",
-        "//tensorflow/compiler/mlir/lite/stablehlo/odml_converter:outline_composites",
         "//tensorflow/compiler/mlir/quantization/common/quantization_lib:quantization_config",
         "//tensorflow/compiler/mlir/tensorflow/transforms:tensorflow_passes",
         "//tensorflow/compiler/mlir/tensorflow/transforms:tf_saved_model_passes",

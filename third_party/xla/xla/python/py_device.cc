@@ -100,6 +100,18 @@ std::string_view PyDevice::Str() const { return device_->DebugString(); }
 
 std::string_view PyDevice::Repr() const { return device_->ToString(); }
 
+bool PyDevice::operator==(const PyDevice& other) const {
+  return process_index() == other.process_index() && id() == other.id();
+}
+
+bool PyDevice::operator<(const PyDevice& other) const {
+  // Sort by process index first, then by device id.
+  if (process_index() != other.process_index()) {
+    return process_index() < other.process_index();
+  }
+  return id() < other.id();
+}
+
 absl::Status PyDevice::TransferToInfeed(LiteralSlice literal) {
   GlobalPyRefManager()->CollectGarbage();
   nb::gil_scoped_release gil_release;
@@ -284,6 +296,8 @@ PyType_Slot PyDevice::slots_[] = {
           "platforms.")
       .def("__str__", &PyDevice::Str)
       .def("__repr__", &PyDevice::Repr)
+      .def("__lt__", &PyDevice::operator<, nb::is_operator())
+      .def("__eq__", &PyDevice::operator==, nb::is_operator())
       .def("transfer_to_infeed",
            ThrowIfErrorWrapper(&PyDevice::TransferToInfeed))
       .def("transfer_from_outfeed",

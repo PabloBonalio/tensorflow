@@ -21,6 +21,7 @@ limitations under the License.
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
 #include "xla/hlo/ir/hlo_casting_utils.h"
 #include "xla/hlo/ir/hlo_instruction.h"
@@ -673,4 +674,43 @@ bool IsBackwardCycle(const SourceTargetPairs& pairs) {
   return true;
 }
 
+bool IsExclusivelyCrossModule(absl::Span<const ReplicaGroup> replica_groups,
+                              bool use_global_ids, bool has_channel_id,
+                              const DeviceAssignment& device_assignment) {
+  if (!has_channel_id) {
+    return false;
+  }
+  if (!use_global_ids) {
+    // Each id is a replica id in a replica group is a replica id. If any group
+    // has more than one id then this is not exclusively cross module.
+    for (const ReplicaGroup& replica_group : replica_groups) {
+      if (replica_group.replica_ids_size() != 1) {
+        return false;
+      }
+    }
+    return true;
+  }
+  // Each id in a replica group is a global id. Check if all replica groups are
+  // exclusively cross module (all participants in a group have the same replica
+  // id).
+  bool is_exclusively_cross_module = true;
+  for (const ReplicaGroup& replica_group : replica_groups) {
+    bool first_replica_id_set = false;
+    int64_t first_replica_id = -1;
+    for (int64_t global_id : replica_group.replica_ids()) {
+      absl::StatusOr<DeviceAssignment::LogicalID> logical_id =
+          device_assignment.LogicalIdForDevice(GlobalDeviceId(global_id));
+      if (!logical_id.ok()) {
+        return false;
+      }
+      if (!first_replica_id_set) {
+        first_replica_id = logical_id.value().replica_id;
+        first_replica_id_set = true;
+      } else if (logical_id.value().replica_id != first_replica_id) {
+        return false;
+      }
+    }
+  }
+  return is_exclusively_cross_module;
+}
 }  // end namespace xla

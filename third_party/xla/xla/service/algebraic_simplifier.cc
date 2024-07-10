@@ -176,7 +176,8 @@ std::optional<double> GetConstantValue(const HloInstruction* inst) {
   return primitive_util::PrimitiveTypeSwitch<std::optional<double>>(
       [&](auto primitive_type_constant) -> std::optional<double> {
         if constexpr (primitive_util::IsFloatingPointType(
-                          primitive_type_constant)) {
+                          primitive_type_constant) ||
+                      primitive_util::IsIntegralType(primitive_type_constant)) {
           using NativeT = NativeTypeOf<primitive_type_constant>;
           return static_cast<double>(
               inst->literal().GetFirstElement<NativeT>());
@@ -5198,6 +5199,14 @@ absl::Status AlgebraicSimplifierVisitor::HandleConvert(
   if (IsConvertPairNoOp(convert)) {
     return ReplaceInstruction(convert,
                               convert->mutable_operand(0)->mutable_operand(0));
+  }
+
+  if (convert->operand(0)->opcode() == HloOpcode::kConstant) {
+    auto val = GetConstantValue(convert->operand(0));
+    if (val.has_value()) {
+      VLOG(10) << "Replacing convert(constant) with constant";
+      return ReplaceInstruction(convert, MakeScalarLike(convert, *val));
+    }
   }
 
   return TryRemoveUpcastAndDowncastSurroundingBinaryOp(convert);
